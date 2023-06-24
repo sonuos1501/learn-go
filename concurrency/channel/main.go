@@ -1,48 +1,45 @@
 package main
 
-import (
-	"fmt"
-	"sync"
-)
+import "fmt"
 
 func main() {
-	wg := sync.WaitGroup{}
+	coffee := bridge("Coffee")
+	bread := bridge("Bread")
 
-	chanPrintNum := make(chan int)
-	chanPrintChar := make(chan string)
+	serve := fanIn(coffee, bread)
 
-	wg.Add(2)
-
-	go printChar(&wg, &chanPrintChar)
-	go printNumber(&wg, &chanPrintNum)
-
-	fmt.Println("Result number", <-chanPrintNum)
-	fmt.Println("Result charactor", <-chanPrintChar)
-
-	wg.Wait()
-	fmt.Println("Finished")
+	for i := 0; i < 5; i++ {
+		fmt.Println(<-serve)
+	}
 }
 
-func printNumber(wg *sync.WaitGroup, numChan *chan int) {
-	defer wg.Done()
 
-	result := 0
-
-	for i := 0; i < 100; i++ {
-		result += i
-	}
-
-	*numChan <- result
+// Fan-in pattents điều hướng các channels
+func fanIn(chan1, chan2 chan string) chan string {
+	c := make(chan string)
+	go func() {
+		for {
+			select {
+			case <-chan1:
+				c <- <-chan1
+			case <-chan2:
+				c <- <-chan2
+			}
+		}
+	}()
+	return c
 }
 
-func printChar(wg *sync.WaitGroup, strChan *chan string) {
-	defer wg.Done()
 
-	result := ""
-	
-	for i := 'A'; i < 'A' + 26; i++ {
-		result += string(i)
-	}
+// Return pattents
+func bridge(msg string) chan string {
+	result := make(chan string)
 
-	*strChan <- result
+	go func() {
+		for i := 0; i < 10; i++ {
+			result <- fmt.Sprintf("%s %d",msg, i)
+		}
+	}()
+
+	return result
 }
