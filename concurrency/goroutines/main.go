@@ -1,18 +1,35 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 func main() {
-	ch := make(chan string)
+	wg := sync.WaitGroup{}
 
-	go push("SON", ch)
-	go push("Thuy", ch)
-	go push("Trang", ch)
+	wg.Add(2)
 
-	fmt.Println(<-ch, <-ch, <-ch)
+	go printNumber(&wg)
+	go printChar(&wg)
+
+	wg.Wait()
+
+	fmt.Println("Finish")
 }
 
-func push(name string, ch chan string) {
-	msg := "Hey, " + name
-	ch <- msg
+func printNumber(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for i := 0; i < 100; i++ {
+		fmt.Printf("%d", i)
+	}
+}
+
+func printChar(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for i := 'A'; i < 'A'+26; i++ {
+		fmt.Printf("%c", i)
+	}
 }
